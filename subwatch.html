@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SubWatch — Your Subscriptions, One Place</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+    }
+  }
+}
+</script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:#15172B;
+    color:#EDEAFD;
+    min-height:100vh;
+  }
+  .font-display{font-family:'Space Grotesk',sans-serif;}
+
+  /* subtle ambient grid texture on the dark bg */
+  .bg-grid{
+    background-image:
+      linear-gradient(rgba(108,99,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .card{
+    background:#F4F1EC;
+    color:#15172B;
+    border-radius:18px;
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 10px 30px rgba(0,0,0,.25);
+  }
+
+  .input{
+    width:100%;border:1.5px solid #E4E0D8;border-radius:10px;
+    padding:.55rem .8rem;font-size:.9rem;background:#fff;color:#15172B;
+    outline:none;transition:border-color .15s,box-shadow .15s;
+  }
+  .input:focus{border-color:#6C63FF;box-shadow:0 0 0 3px rgba(108,99,255,.15);}
+  .input-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7A7568;margin-bottom:.3rem;display:block;}
+
+  .btn-primary{
+    background:#6C63FF;color:#fff;font-weight:600;border-radius:10px;
+    padding:.6rem 1.3rem;cursor:pointer;border:none;font-size:.88rem;
+    transition:all .15s;
+  }
+  .btn-primary:hover{background:#5750E0;transform:translateY(-1px);box-shadow:0 6px 18px rgba(108,99,255,.35);}
+  .btn-ghost{
+    background:transparent;color:#A8A4F5;border:1.5px solid rgba(168,164,245,.3);
+    font-weight:600;border-radius:10px;padding:.55rem 1.05rem;cursor:pointer;
+    transition:all .15s;font-size:.85rem;
+  }
+  .btn-ghost:hover{border-color:#A8A4F5;background:rgba(168,164,245,.08);}
+  .btn-danger-ghost{
+    background:transparent;color:#FF6B4A;border:1.5px solid rgba(255,107,74,.3);
+    font-weight:600;border-radius:8px;padding:.35rem .7rem;cursor:pointer;
+    font-size:.78rem;transition:all .15s;
+  }
+  .btn-danger-ghost:hover{background:rgba(255,107,74,.1);border-color:#FF6B4A;}
+
+  /* Renewal status pill — the signature element */
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:.72rem;font-weight:700;padding:4px 11px;border-radius:99px;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .pill-ok{background:#DEF7EC;color:#0E7A4F;}
+  .pill-soon{background:#FFF1D6;color:#9A5B00;}
+  .pill-urgent{background:#FFE0D6;color:#C23B14;}
+  .pill-overdue{background:#15172B;color:#FF8A6B;}
+
+  .sub-card{
+    border-radius:18px;
+    background:linear-gradient(160deg, #F8F6F1 0%, #EFEBE2 100%);
+    color:#15172B;
+    padding:1.1rem 1.2rem;
+    border:2px solid transparent;
+    transition:transform .18s, box-shadow .18s, border-color .18s;
+    position:relative;
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 6px 16px rgba(0,0,0,.18);
+  }
+  .sub-card:hover{transform:translateY(-3px);box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 18px 36px rgba(0,0,0,.32);}
+  .sub-card.border-ok{border-color:#3DDC97;}
+  .sub-card.border-soon{border-color:#F5B341;}
+  .sub-card.border-urgent{border-color:#FF6B4A;}
+  .sub-card.border-overdue{border-color:#FF3B3B;}
+
+  .badge-icon{
+    width:44px;height:44px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;
+    color:#fff;flex-shrink:0;
+  }
+
+  .hero-number{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    letter-spacing:-0.02em;
+    font-size:clamp(2.6rem, 7vw, 4.4rem);
+    line-height:1;
+    background:linear-gradient(135deg, #EDEAFD 30%, #A8A4F5 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    position:relative;
+  }
+
+  .hero-glow{
+    position:absolute;
+    width:420px;height:420px;
+    background:radial-gradient(circle, rgba(108,99,255,.25) 0%, rgba(108,99,255,0) 70%);
+    top:-120px;left:-80px;
+    pointer-events:none;
+    z-index:0;
+    filter:blur(10px);
+  }
+
+  .breakdown-bar{
+    display:flex;height:10px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.05);
+  }
+  .breakdown-seg{height:100%;transition:width .4s ease;}
+
+  .breakdown-legend{
+    display:flex;flex-wrap:wrap;gap:.5rem 1rem;margin-top:.7rem;
+  }
+  .breakdown-legend-item{
+    display:flex;align-items:center;gap:6px;font-size:.74rem;color:#A39EE0;
+  }
+  .breakdown-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  .stat-mini{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:14px;
+    padding:.85rem 1.1rem;
+  }
+  .stat-mini-label{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;margin-bottom:.25rem;}
+  .stat-mini-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem;color:#EDEAFD;}
+
+  .attention-card{
+    display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    background:rgba(255,107,74,.08);
+    border:1.5px solid rgba(255,107,74,.35);
+    border-radius:14px;
+    padding:.8rem 1rem;
+  }
+  .attention-card.is-overdue{background:rgba(255,59,59,.12);border-color:rgba(255,59,59,.4);}
+  .attention-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.92rem;color:#EDEAFD;}
+  .attention-sub{font-size:.74rem;color:#A39EE0;margin-top:1px;}
+  .attention-pill{
+    font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:99px;flex-shrink:0;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .attention-action-btn{
+    font-size:.7rem;font-weight:700;padding:6px 11px;border-radius:9px;border:none;
+    cursor:pointer;white-space:nowrap;font-family:'Space Grotesk',sans-serif;
+    transition:transform .12s, opacity .12s;
+  }
+  .attention-action-btn:hover{transform:translateY(-1px);opacity:.9;}
+
+  #sub-table-body tr{border-bottom:1px solid rgba(255,255,255,.06);transition:background .15s;}
+  #sub-table-body tr:hover{background:rgba(255,255,255,.03);}
+  #sub-table-body tr:last-child{border-bottom:none;}
+  .table-icon-btn{background:none;border:none;cursor:pointer;color:#9B97C9;padding:5px;border-radius:6px;transition:all .15s;}
+  .table-icon-btn:hover{background:rgba(255,255,255,.08);color:#EDEAFD;}
+
+  .timeline-item{
+    display:flex;gap:12px;padding-bottom:1.1rem;position:relative;
+  }
+  .timeline-item:not(:last-child)::before{
+    content:'';position:absolute;left:9px;top:22px;bottom:0;width:2px;background:#E4E0D8;
+  }
+  .timeline-dot{
+    width:20px;height:20px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:#6C63FF;color:#fff;font-size:.6rem;font-weight:700;
+    margin-top:1px;position:relative;z-index:1;
+  }
+  .timeline-dot.is-original{background:#15172B;}
+  .timeline-dot.is-edit{background:#F5B341;color:#3A2A00;}
+  .timeline-content{flex:1;padding-bottom:.2rem;}
+  .timeline-date{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.88rem;color:#15172B;}
+  .timeline-meta{font-size:.78rem;color:#7A7568;margin-top:1px;}
+  .timeline-note{font-size:.78rem;color:#9B97C9;margin-top:3px;font-style:italic;}
+
+  .cat-chip{
+    font-size:.68rem;font-weight:600;padding:2px 9px;border-radius:99px;
+    background:rgba(108,99,255,.12);color:#A8A4F5;
+  }
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(8,9,20,.7);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:1rem;z-index:1000;
+  }
+  /* When a modal is opened from inside another modal (e.g. editing a history
+     entry while the History modal is still open), bump it above the rest so
+     it's always the active, top-most layer regardless of DOM source order. */
+  .modal-overlay.show{display:flex;}
+  .modal-overlay.modal-on-top{z-index:1100;}
+  .modal-box{
+    background:#F4F1EC;color:#15172B;border-radius:20px;padding:2rem;
+    max-width:440px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4);
+    animation:modalPop .2s cubic-bezier(.2,1.4,.4,1);
+    max-height:88vh;overflow-y:auto;
+  }
+  @keyframes modalPop{from{opacity:0;transform:scale(.92) translateY(8px);}to{opacity:1;transform:none;}}
+
+  .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
+  .toggle-switch input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#D8D3C8;border-radius:24px;transition:.25s;}
+  .toggle-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;}
+  .toggle-switch input:checked + .toggle-slider{background:#6C63FF;}
+  .toggle-switch input:checked + .toggle-slider:before{transform:translateX(20px);}
+
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(168,164,245,.25);border-radius:99px;}
+
+  .empty-state{
+    text-align:center;padding:4rem 1rem;color:#7B7AA8;
+  }
+
+  @media(max-width:640px){
+    .hero-number{font-size:2.6rem;}
+  }
+</style>
+</head>
+<body class="bg-grid">
+
+<!-- ══════════════════════════════════════════════════════
+     HERO — Total monthly burn
+══════════════════════════════════════════════════════ -->
+<header class="px-5 pt-10 pb-8 max-w-5xl mx-auto" style="position:relative;">
+  <div class="hero-glow"></div>
+  <div class="flex items-center justify-between mb-8" style="position:relative;z-index:1;">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:#6C63FF;">S</div>
+      <span class="font-display font-semibold text-lg tracking-tight">SubWatch</span>
+    </div>
+    <button onclick="openAddModal()" class="btn-primary flex items-center gap-2">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add Subscription
+    </button>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#7B7AA8;">Monthly burn</p>
+    <div class="flex items-end gap-4 flex-wrap">
+      <div class="hero-number" id="hero-monthly">RM 0</div>
+      <div class="pb-2 text-sm" style="color:#7B7AA8;">
+        <span id="hero-yearly">RM 0</span> / year &middot; <span id="hero-count">0</span> active subscriptions
+      </div>
+    </div>
+
+    <!-- Weekly / Monthly / Yearly cost calculator -->
+    <div class="grid grid-cols-3 gap-3 mt-5">
+      <div class="stat-mini" style="text-align:center;">
+        <div class="stat-mini-label">Weekly</div>
+        <div class="stat-mini-value" id="calc-weekly" style="font-size:1.05rem;">RM 0</div>
+      </div>
+      <div class="stat-mini" style="text-align:center;border-color:rgba(108,99,255,.4);">
+        <div class="stat-mini-label">Monthly</div>
+        <div class="stat-mini-value" id="calc-monthly" style="font-size:1.05rem;color:#A8A4F5;">RM 0</div>
+      </div>
+      <div class="stat-mini" style="text-align:center;">
+        <div class="stat-mini-label">Yearly</div>
+        <div class="stat-mini-value" id="calc-yearly" style="font-size:1.05rem;">RM 0</div>
+      </div>
+    </div>
+
+    <!-- Category breakdown bar -->
+    <div class="mt-5" id="breakdown-wrap" style="display:none;">
+      <div class="breakdown-bar" id="breakdown-bar"></div>
+      <div class="breakdown-legend" id="breakdown-legend"></div>
+    </div>
+
+    <!-- Mini stat cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+      <div class="stat-mini">
+        <div class="stat-mini-label">Renewing this week</div>
+        <div class="stat-mini-value" id="stat-this-week">0</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Most expensive</div>
+        <div class="stat-mini-value" id="stat-most-expensive">—</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Top category</div>
+        <div class="stat-mini-value" id="stat-top-category">—</div>
+      </div>
+    </div>
+
+    <div id="urgent-banner" class="hidden mt-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2" style="background:rgba(255,107,74,.12);border:1px solid rgba(255,107,74,.3);color:#FF8A6B;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span id="urgent-banner-text"></span>
+    </div>
+
+    <!-- Category Pie Chart -->
+    <div id="category-pie-wrap" class="hidden mt-6 p-5 rounded-2xl" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);">
+      <p class="text-xs font-semibold uppercase tracking-widest mb-4" style="color:#7B7AA8;">Spending by Category</p>
+      <div class="flex flex-col sm:flex-row items-center gap-6">
+        <div id="category-pie" style="width:140px;height:140px;border-radius:50%;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,.3);"></div>
+        <div id="category-pie-legend" class="flex-1 w-full"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════
+     NEEDS ATTENTION — overdue or about to renew
+══════════════════════════════════════════════════════ -->
+<div id="attention-section" class="max-w-5xl mx-auto px-5 mb-7 hidden">
+  <div class="flex items-center gap-2 mb-3">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" stroke-width="2.3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <h2 class="font-display font-semibold text-base" style="color:#FF8A6B;">Needs Attention</h2>
+  </div>
+  <div id="attention-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     FILTER BAR
+══════════════════════════════════════════════════════ -->
+<div class="max-w-5xl mx-auto px-5 mb-5 flex flex-wrap gap-2 items-center justify-between">
+  <div class="flex flex-wrap gap-2">
+    <select id="filter-category" class="input" style="width:auto;background:#1E2040;color:#EDEAFD;border-color:rgba(168,164,245,.25);" onchange="render()">
+      <option value="all">All categories</option>
+    </select>
+    <select id="sort-by" class="input" style="width:auto;background:#1E2040;color:#EDEAFD;border-color:rgba(168,164,245,.25);" onchange="render()">
+      <option value="renewal">Sort: Renewal date</option>
+      <option value="price-desc">Sort: Price (high → low)</option>
+      <option value="price-asc">Sort: Price (low → high)</option>
+      <option value="name">Sort: Name (A–Z)</option>
+    </select>
+  </div>
+  <div class="flex border rounded-lg overflow-hidden" style="border-color:rgba(168,164,245,.25);">
+    <button id="view-cards-btn" onclick="setViewMode('cards')" class="px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-all" style="background:#6C63FF;color:#fff;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Cards
+    </button>
+    <button id="view-table-btn" onclick="setViewMode('table')" class="px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-all" style="background:transparent;color:#9B97C9;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      Table
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SUBSCRIPTION GRID / TABLE
+══════════════════════════════════════════════════════ -->
+<main class="max-w-5xl mx-auto px-5 pb-16">
+  <div id="sub-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="sub-table-wrap" class="hidden" style="overflow-x:auto;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);">
+    <table class="w-full text-sm" style="border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1.5px solid rgba(255,255,255,.1);">
+          <th class="text-left py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Service</th>
+          <th class="text-left py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Category</th>
+          <th class="text-right py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Price</th>
+          <th class="text-left py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Cycle</th>
+          <th class="text-left py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Renews</th>
+          <th class="text-left py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Status</th>
+          <th class="text-right py-3 px-4 font-display" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7B7AA8;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="sub-table-body"></tbody>
+    </table>
+  </div>
+  <div id="empty-state" class="empty-state hidden">
+    <div style="font-size:2.5rem;margin-bottom:.5rem;">📭</div>
+    <p class="font-display font-semibold text-lg mb-1" style="color:#EDEAFD;">No subscriptions yet</p>
+    <p class="text-sm">Add your first one — Netflix, antivirus, cloud storage, whatever you're paying for.</p>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     ADD / EDIT MODAL
+══════════════════════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal-box">
+    <h2 class="font-display font-semibold text-xl mb-5" id="modal-title">Add Subscription</h2>
+
+    <div class="space-y-3.5">
+      <div>
+        <label class="input-label">Service Name</label>
+        <input id="f-name" class="input" placeholder="e.g. Netflix, Norton 360, Google One" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="input-label">Price</label>
+          <input id="f-price" class="input" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateExchangePreview()" />
+        </div>
+        <div>
+          <label class="input-label">Currency</label>
+          <select id="f-currency" class="input" onchange="onCurrencyChange()">
+            <option value="RM">RM (MYR)</option>
+            <option value="USD">USD</option>
+            <option value="SGD">SGD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+      </div>
+      <div id="exchange-rate-row" class="hidden">
+        <label class="input-label">Exchange Rate to MYR <span style="font-weight:400;text-transform:none;">(1 unit = ? RM)</span></label>
+        <input id="f-exchange-rate" class="input" type="number" min="0" step="0.0001" placeholder="e.g. 4.70" oninput="updateExchangePreview()" />
+        <p class="text-xs mt-1" style="color:#9B97C9;" id="exchange-preview"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="input-label">Billing Cycle</label>
+          <select id="f-cycle" class="input" onchange="onCycleOrStartChange()">
+            <option value="weekly">Weekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="yearly">Yearly (1 year)</option>
+            <option value="2year">Every 2 years</option>
+            <option value="3year">Every 3 years</option>
+            <option value="4year">Every 4 years</option>
+            <option value="5year">Every 5 years</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Category</label>
+          <select id="f-category" class="input">
+            <option value="Entertainment">Entertainment</option>
+            <option value="Security">Security</option>
+            <option value="Cloud & Storage">Cloud &amp; Storage</option>
+            <option value="Productivity">Productivity</option>
+            <option value="Music">Music</option>
+            <option value="News & Media">News &amp; Media</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="input-label">Originally Subscribed Since</label>
+          <input id="f-start" class="input" type="date" onchange="onCycleOrStartChange()" />
+          <p class="text-xs mt-1" style="color:#9B97C9;" id="original-start-hint">When you first signed up</p>
+        </div>
+        <div>
+          <label class="input-label">Next Renewal Date</label>
+          <input id="f-renewal" class="input" type="date" onchange="onRenewalManualChange()" />
+          <p class="text-xs mt-1" style="color:#9B97C9;" id="renewal-auto-hint">Auto-calculated from start date</p>
+        </div>
+      </div>
+      <div>
+        <label class="input-label">Remind Me (days before renewal)</label>
+        <select id="f-remind" class="input">
+          <option value="3">3 days before</option>
+          <option value="7" selected>7 days before</option>
+          <option value="14">14 days before</option>
+          <option value="30">30 days before</option>
+        </select>
+      </div>
+
+      <!-- Trial toggle -->
+      <div class="flex items-center gap-3 pt-1">
+        <label class="toggle-switch">
+          <input type="checkbox" id="f-is-trial" onchange="onTrialToggle()" />
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <p class="text-sm font-semibold" style="color:#15172B;">This is a free trial</p>
+          <p class="text-xs" style="color:#7A7568;">Get a high-priority alert before it auto-converts to paid</p>
+        </div>
+      </div>
+      <div id="trial-end-row" class="hidden">
+        <label class="input-label">Trial Ends On</label>
+        <input id="f-trial-end" class="input" type="date" />
+      </div>
+
+      <!-- Cancel-by reminder -->
+      <div>
+        <label class="input-label">Cancel-By Date <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+        <input id="f-cancel-by" class="input" type="date" />
+        <p class="text-xs mt-1" style="color:#9B97C9;">Set a personal deadline to decide if you want to keep this</p>
+      </div>
+
+      <!-- Cancel guide -->
+      <div>
+        <label class="input-label">Cancellation Link <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+        <input id="f-cancel-url" class="input" type="url" placeholder="e.g. https://netflix.com/cancelplan" />
+      </div>
+      <div>
+        <label class="input-label">Cancel Steps / Support Contact <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+        <textarea id="f-cancel-notes" class="input" rows="2" placeholder="e.g. Settings > Subscriptions > Cancel. Support: support@service.com"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal()" class="btn-ghost flex-1" style="color:#7A7568;border-color:#E4E0D8;">Cancel</button>
+      <button onclick="saveSubscription()" class="btn-primary flex-1">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CONFIRM DELETE MODAL
+══════════════════════════════════════════════════════ -->
+<div id="confirm-overlay" class="modal-overlay" onclick="if(event.target===this) closeConfirm()">
+  <div class="modal-box" style="text-align:center;">
+    <div style="font-size:2.2rem;margin-bottom:.5rem;">🗑</div>
+    <h2 class="font-display font-semibold text-lg mb-1">Remove this subscription?</h2>
+    <p class="text-sm mb-6" style="color:#7A7568;" id="confirm-text"></p>
+    <div class="flex gap-3">
+      <button onclick="closeConfirm()" class="btn-ghost flex-1" style="color:#7A7568;border-color:#E4E0D8;">Cancel</button>
+      <button onclick="confirmDelete()" class="flex-1" style="background:#FF6B4A;color:#fff;font-weight:600;border:none;border-radius:10px;padding:.6rem 1rem;cursor:pointer;">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CANCEL GUIDE MODAL
+══════════════════════════════════════════════════════ -->
+<div id="cancel-guide-overlay" class="modal-overlay" onclick="if(event.target===this) closeCancelGuide()">
+  <div class="modal-box">
+    <h2 class="font-display font-semibold text-lg mb-1" id="cancel-guide-title">Cancel Guide</h2>
+    <p class="text-sm mb-4" style="color:#7A7568;">How to cancel this subscription</p>
+    <div id="cancel-guide-notes" class="text-sm mb-4 p-3 rounded-xl whitespace-pre-line" style="background:#fff;border:1.5px solid #E4E0D8;color:#15172B;"></div>
+    <div class="flex gap-3">
+      <button onclick="closeCancelGuide()" class="btn-ghost flex-1" style="color:#7A7568;border-color:#E4E0D8;">Close</button>
+      <a id="cancel-guide-link" href="#" target="_blank" rel="noopener" class="flex-1 text-center" style="background:#FF6B4A;color:#fff;font-weight:600;border-radius:10px;padding:.6rem 1rem;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+        Open Cancel Page
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     RENEW MODAL
+══════════════════════════════════════════════════════ -->
+<div id="renew-overlay" class="modal-overlay" onclick="if(event.target===this) closeRenewModal()">
+  <div class="modal-box">
+    <h2 class="font-display font-semibold text-xl mb-1" id="renew-title">Renew Subscription</h2>
+    <p class="text-sm mb-5" style="color:#7A7568;">Log this payment to history and set the next renewal date.</p>
+
+    <div class="space-y-3.5">
+      <div>
+        <label class="input-label">Date Renewed</label>
+        <input id="renew-date" class="input" type="date" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="input-label">Amount Paid</label>
+          <input id="renew-price" class="input" type="number" min="0" step="0.01" />
+        </div>
+        <div>
+          <label class="input-label">Billing Cycle</label>
+          <select id="renew-cycle" class="input">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly (1 year)</option>
+            <option value="2year">Every 2 years</option>
+            <option value="3year">Every 3 years</option>
+            <option value="4year">Every 4 years</option>
+            <option value="5year">Every 5 years</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="input-label">Note <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+        <input id="renew-note" class="input" placeholder="e.g. Switched to annual plan, applied promo code" />
+      </div>
+      <div class="text-xs px-3 py-2.5 rounded-lg" style="background:#EFF6F1;color:#0E7A4F;" id="renew-preview-row">
+        Next renewal will be set to <strong id="renew-next-preview">—</strong>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeRenewModal()" class="btn-ghost flex-1" style="color:#7A7568;border-color:#E4E0D8;">Cancel</button>
+      <button id="renew-confirm-btn" onclick="confirmRenew()" class="flex-1" style="background:#3DDC97;color:#0A2E1E;font-weight:700;border:none;border-radius:10px;padding:.6rem 1rem;cursor:pointer;">Confirm Renewal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HISTORY MODAL
+══════════════════════════════════════════════════════ -->
+<div id="history-overlay" class="modal-overlay" onclick="if(event.target===this) closeHistoryModal()">
+  <div class="modal-box" style="max-width:480px;">
+    <h2 class="font-display font-semibold text-xl mb-1" id="history-title">Renewal History</h2>
+    <p class="text-sm mb-4" style="color:#7A7568;" id="history-subtitle">Subscribed since —</p>
+    <div id="history-timeline" style="max-height:360px;overflow-y:auto;"></div>
+    <button onclick="closeHistoryModal()" class="btn-ghost w-full mt-5" style="color:#7A7568;border-color:#E4E0D8;">Close</button>
+  </div>
+</div>
+
+<footer class="text-center pb-8 text-xs" style="color:#5C5A82;">
+  All data stays in this browser — nothing is uploaded anywhere.
+</footer>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+let subs = [];
+let editingId = null;
+let deletingId = null;
+
+const CATEGORY_COLORS = {
+  'Entertainment':    '#E94560',
+  'Security':         '#2D9CDB',
+  'Cloud & Storage':  '#6C63FF',
+  'Productivity':     '#27AE60',
+  'Music':            '#F2994A',
+  'News & Media':     '#9B51E0',
+  'Other':            '#7A7568',
+};
+
+// ── STORAGE ────────────────────────────────────────────────
+function load(){
+  subs = JSON.parse(localStorage.getItem('subwatch_subs') || '[]');
+}
+function save(){
+  localStorage.setItem('subwatch_subs', JSON.stringify(subs));
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtNum(n){ return parseFloat(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function toLocalISODate(date){
+  const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'), d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function todayISO(){ return toLocalISODate(new Date()); }
+
+function daysUntil(dateStr){
+  const today = new Date(todayISO()+'T00:00:00');
+  const target = new Date(dateStr+'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+
+function monthlyEquivalent(sub){
+  const p = parseFloat(sub.price) || 0;
+  const divisors = { weekly: 1/4.345, monthly: 1, yearly: 12, '2year': 24, '3year': 36, '4year': 48, '5year': 60 };
+  const months = divisors[sub.cycle] !== undefined ? divisors[sub.cycle] : 1;
+  return p / months;
+}
+
+// Converts the subscription's monthly-equivalent price into MYR using its
+// own saved exchange rate. If currency is already RM, or no rate was set,
+// returns the value unconverted (1:1).
+function monthlyEquivalentMYR(sub){
+  const monthly = monthlyEquivalent(sub);
+  if(sub.currency === 'RM') return monthly;
+  const rate = parseFloat(sub.exchangeRate);
+  if(!rate || isNaN(rate)) return monthly; // no rate set — treat as 1:1 fallback
+  return monthly * rate;
+}
+
+function weeklyEquivalentMYR(sub){ return monthlyEquivalentMYR(sub) * 12 / 52.14; }
+function yearlyEquivalentMYR(sub){ return monthlyEquivalentMYR(sub) * 12; }
+
+function cycleDays(cycle){
+  const map = { weekly: 7, monthly: 30, yearly: 365, '2year': 730, '3year': 1095, '4year': 1460, '5year': 1825 };
+  return map[cycle] || 30;
+}
+
+// Adds the cycle interval to a base date using real calendar arithmetic
+// (so "yearly" lands on the same month/day next year, not +365 days flatly)
+function addCycleToDate(baseDateStr, cycle){
+  const base = new Date(baseDateStr + 'T00:00:00');
+  const yearMap = { yearly: 1, '2year': 2, '3year': 3, '4year': 4, '5year': 5 };
+  const origDay = base.getDate();
+
+  if(cycle === 'weekly'){
+    base.setDate(base.getDate() + 7);
+  } else if(cycle === 'monthly'){
+    const targetMonth = base.getMonth() + 1;
+    base.setMonth(targetMonth, 1); // jump to the 1st of target month first to avoid overflow
+    const daysInTargetMonth = new Date(base.getFullYear(), base.getMonth()+1, 0).getDate();
+    base.setDate(Math.min(origDay, daysInTargetMonth)); // clamp e.g. Jan 31 -> Feb 28
+  } else if(yearMap[cycle]){
+    const years = yearMap[cycle];
+    const targetYear = base.getFullYear() + years;
+    const targetMonth = base.getMonth();
+    const daysInTargetMonth = new Date(targetYear, targetMonth+1, 0).getDate();
+    base.setFullYear(targetYear, targetMonth, Math.min(origDay, daysInTargetMonth)); // handles Feb 29 leap edge too
+  } else {
+    base.setMonth(base.getMonth() + 1);
+  }
+
+  // Per explicit confirmation: renewal date is always 1 day BEFORE the naive
+  // same-date-next-period (e.g. 12 Jul 2025 + 1yr -> 11 Jul 2026, not 12 Jul 2026).
+  base.setDate(base.getDate() - 1);
+
+  return toLocalISODate(base);
+}
+
+// Given a subscription's start date and billing cycle, the next renewal
+// is simply start date + one cycle. (Previously this tried to roll forward
+// past "today", which broke for any start date that was today or in the
+// future — it would return the start date itself instead of start+1 cycle.)
+function nextRenewalFromStart(startDateStr, cycle){
+  if(!startDateStr) return todayISO();
+  return addCycleToDate(startDateStr, cycle);
+}
+
+// For an existing/older subscription, find the upcoming renewal by rolling
+// the cycle forward from the start date until it's today or later.
+// Used only when re-syncing an existing subscription's renewal — NOT for
+// the simple "start + 1 cycle" case used when adding/editing.
+function rollForwardToUpcoming(startDateStr, cycle){
+  if(!startDateStr) return todayISO();
+  let d = addCycleToDate(startDateStr, cycle);
+  const today = todayISO();
+  let guard = 0;
+  while(d < today && guard < 600){
+    d = addCycleToDate(d, cycle);
+    guard++;
+  }
+  return d;
+}
+
+function initials(name){
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if(!words.length) return '?';
+  if(words.length === 1) return words[0].slice(0,2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function colorForCategory(cat){
+  return CATEGORY_COLORS[cat] || CATEGORY_COLORS['Other'];
+}
+
+function statusFor(sub){
+  // Trial subscriptions get top-priority urgent styling regardless of days left,
+  // since converting from free-to-paid unexpectedly is the worst outcome.
+  if(sub.isTrial && sub.trialEnd){
+    const trialDays = daysUntil(sub.trialEnd);
+    if(trialDays <= 3){
+      const label = trialDays < 0 ? `Trial ended ${Math.abs(trialDays)}d ago` : trialDays === 0 ? 'Trial ends today' : `Trial: ${trialDays}d left`;
+      return { key:'trial-urgent', label, pillClass:'pill-overdue', borderClass:'border-overdue' };
+    }
+  }
+  const days = daysUntil(sub.renewal);
+  if(days < 0)  return { key:'overdue', label:`Overdue ${Math.abs(days)}d`, pillClass:'pill-overdue', borderClass:'border-overdue' };
+  if(days === 0) return { key:'overdue', label:'Renews today', pillClass:'pill-overdue', borderClass:'border-overdue' };
+  if(days <= (sub.remind || 7)) {
+    if(days <= 3) return { key:'urgent', label:`${days}d left`, pillClass:'pill-urgent', borderClass:'border-urgent' };
+    return { key:'soon', label:`${days}d left`, pillClass:'pill-soon', borderClass:'border-soon' };
+  }
+  return { key:'ok', label:`${days}d left`, pillClass:'pill-ok', borderClass:'border-ok' };
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function populateCategoryFilter(){
+  const sel = document.getElementById('filter-category');
+  const cur = sel.value;
+  const cats = [...new Set(subs.map(s=>s.category))].sort();
+  sel.innerHTML = '<option value="all">All categories</option>' +
+    cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  if(cats.includes(cur)) sel.value = cur;
+}
+
+function render(){
+  populateCategoryFilter();
+  renderHero();
+  renderAttentionSection();
+  renderGrid();
+  renderTable();
+}
+
+function renderAttentionSection(){
+  const section = document.getElementById('attention-section');
+  const grid    = document.getElementById('attention-grid');
+
+  // Overdue/urgent renewals (within 3 days) OR trials ending within 3 days
+  const needsAttention = subs
+    .filter(s => {
+      const renewalUrgent = daysUntil(s.renewal) <= 3;
+      const trialUrgent   = s.isTrial && s.trialEnd && daysUntil(s.trialEnd) <= 3;
+      return renewalUrgent || trialUrgent;
+    })
+    .sort((a,b) => {
+      const aDays = (a.isTrial && a.trialEnd) ? daysUntil(a.trialEnd) : daysUntil(a.renewal);
+      const bDays = (b.isTrial && b.trialEnd) ? daysUntil(b.trialEnd) : daysUntil(b.renewal);
+      return aDays - bDays;
+    });
+
+  if(!needsAttention.length){
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+
+  grid.innerHTML = needsAttention.map(sub => {
+    const isTrialCase = sub.isTrial && sub.trialEnd && daysUntil(sub.trialEnd) <= 3;
+    const days = isTrialCase ? daysUntil(sub.trialEnd) : daysUntil(sub.renewal);
+    const isOverdue = days < 0;
+    let label, pillBg, pillColor;
+
+    if(isTrialCase){
+      if(days < 0){ label = `Trial ended ${Math.abs(days)}d ago`; pillBg = '#FF3B3B'; pillColor = '#fff'; }
+      else if(days === 0){ label = 'Trial ends today'; pillBg = '#FF3B3B'; pillColor = '#fff'; }
+      else { label = `Trial: ${days}d left`; pillBg = '#FF6B4A'; pillColor = '#fff'; }
+    } else {
+      if(days < 0){ label = `${Math.abs(days)}d overdue`; pillBg = '#FF3B3B'; pillColor = '#fff'; }
+      else if(days === 0){ label = 'Renews today'; pillBg = '#FF3B3B'; pillColor = '#fff'; }
+      else { label = `${days}d left`; pillBg = '#FF6B4A'; pillColor = '#fff'; }
+    }
+
+    const subLine = isTrialCase
+      ? `Converts to ${sub.currency} ${fmtNum(sub.price)} on ${formatDateDisplay(sub.trialEnd)}`
+      : `${sub.currency} ${fmtNum(sub.price)} &middot; ${formatDateDisplay(sub.renewal)}`;
+
+    // Trials ending soon get two actions: Renew (keep it) or Cancel Info (view-only cancellation details)
+    // Regular expiring/overdue subscriptions get a Renew button + status pill
+    const actionsHtml = isTrialCase
+      ? `<div class="flex gap-1.5 flex-shrink-0">
+           <button onclick="openRenewModal('${sub.id}')" class="attention-action-btn" style="background:#3DDC97;color:#0A2E1E;">Renew</button>
+           <button onclick="openCancelGuide('${sub.id}')" class="attention-action-btn" style="background:rgba(255,107,74,.15);color:#FF8A6B;">Cancel Info</button>
+         </div>`
+      : `<div class="flex items-center gap-2 flex-shrink-0">
+           <span class="attention-pill" style="background:${pillBg};color:${pillColor};">${label}</span>
+           <button onclick="openRenewModal('${sub.id}')" class="attention-action-btn" style="background:#3DDC97;color:#0A2E1E;">Renew</button>
+         </div>`;
+
+    return `
+    <div class="attention-card ${isOverdue ? 'is-overdue' : ''}">
+      <div style="min-width:0;flex:1;">
+        <div class="attention-name">${esc(sub.name)} ${isTrialCase ? '<span style="font-size:.65rem;font-weight:700;color:#FF8A6B;background:rgba(255,107,74,.15);padding:1px 7px;border-radius:99px;margin-left:5px;">TRIAL</span>' : ''}</div>
+        <div class="attention-sub">${subLine}</div>
+        ${isTrialCase ? `<div class="mt-1.5"><span class="attention-pill" style="background:${pillBg};color:${pillColor};font-size:.65rem;">${label}</span></div>` : ''}
+      </div>
+      ${actionsHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderHero(){
+  const monthlyTotal = subs.reduce((sum,s)=>sum + monthlyEquivalentMYR(s), 0);
+  const weeklyTotal  = subs.reduce((sum,s)=>sum + weeklyEquivalentMYR(s), 0);
+  const yearlyTotal  = subs.reduce((sum,s)=>sum + yearlyEquivalentMYR(s), 0);
+
+  document.getElementById('hero-monthly').textContent = `RM ${fmtNum(monthlyTotal)}`;
+  document.getElementById('hero-yearly').textContent  = `RM ${fmtNum(yearlyTotal)}`;
+  document.getElementById('hero-count').textContent   = subs.length;
+
+  document.getElementById('calc-weekly').textContent  = `RM ${fmtNum(weeklyTotal)}`;
+  document.getElementById('calc-monthly').textContent = `RM ${fmtNum(monthlyTotal)}`;
+  document.getElementById('calc-yearly').textContent  = `RM ${fmtNum(yearlyTotal)}`;
+
+  // Urgent banner — anything renewing within its reminder window, OR a trial ending soon
+  const urgent = subs.filter(s => {
+    const days = daysUntil(s.renewal);
+    const trialUrgent = s.isTrial && s.trialEnd && daysUntil(s.trialEnd) <= 3;
+    return days <= (s.remind || 7) || trialUrgent;
+  }).sort((a,b)=>daysUntil(a.renewal)-daysUntil(b.renewal));
+
+  const banner = document.getElementById('urgent-banner');
+  if(urgent.length){
+    banner.classList.remove('hidden');
+    const first = urgent[0];
+    let dayWord;
+    if(first.isTrial && first.trialEnd && daysUntil(first.trialEnd) <= 3){
+      const td = daysUntil(first.trialEnd);
+      dayWord = td < 0 ? `trial already ended` : td === 0 ? 'trial ends today — converts to paid!' : `trial ends in ${td}d — converts to paid!`;
+    } else {
+      const days = daysUntil(first.renewal);
+      dayWord = days < 0 ? `overdue by ${Math.abs(days)} day${Math.abs(days)!==1?'s':''}`
+              : days === 0 ? 'renews today'
+              : `renews in ${days} day${days!==1?'s':''}`;
+    }
+    const extra = urgent.length > 1 ? ` (+${urgent.length-1} more renewing soon)` : '';
+    document.getElementById('urgent-banner-text').textContent =
+      `${first.name} ${dayWord}${extra}`;
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  renderBreakdownBar(monthlyTotal);
+  renderCategoryPie(monthlyTotal);
+  renderMiniStats();
+}
+
+function renderBreakdownBar(monthlyTotal){
+  const wrap = document.getElementById('breakdown-wrap');
+  if(!subs.length || monthlyTotal <= 0){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const byCategory = {};
+  subs.forEach(s => {
+    byCategory[s.category] = (byCategory[s.category] || 0) + monthlyEquivalentMYR(s);
+  });
+  const sorted = Object.entries(byCategory).sort((a,b)=>b[1]-a[1]);
+
+  document.getElementById('breakdown-bar').innerHTML = sorted.map(([cat, amt]) => {
+    const pct = (amt / monthlyTotal) * 100;
+    return `<div class="breakdown-seg" style="width:${pct}%;background:${colorForCategory(cat)};" title="${esc(cat)}: RM ${fmtNum(amt)}"></div>`;
+  }).join('');
+
+  document.getElementById('breakdown-legend').innerHTML = sorted.map(([cat, amt]) => {
+    const pct = Math.round((amt / monthlyTotal) * 100);
+    return `<span class="breakdown-legend-item"><span class="breakdown-dot" style="background:${colorForCategory(cat)};"></span>${esc(cat)} · ${pct}%</span>`;
+  }).join('');
+}
+
+// Real pie chart using conic-gradient — no chart library needed
+function renderCategoryPie(monthlyTotal){
+  const pieWrap = document.getElementById('category-pie-wrap');
+  const pieEl   = document.getElementById('category-pie');
+  const legendEl= document.getElementById('category-pie-legend');
+  if(!subs.length || monthlyTotal <= 0){ pieWrap.classList.add('hidden'); return; }
+  pieWrap.classList.remove('hidden');
+
+  const byCategory = {};
+  subs.forEach(s => byCategory[s.category] = (byCategory[s.category]||0) + monthlyEquivalentMYR(s));
+  const sorted = Object.entries(byCategory).sort((a,b)=>b[1]-a[1]);
+
+  let cursor = 0;
+  const stops = sorted.map(([cat, amt]) => {
+    const pct = (amt / monthlyTotal) * 100;
+    const start = cursor;
+    const end = cursor + pct;
+    cursor = end;
+    return `${colorForCategory(cat)} ${start}% ${end}%`;
+  }).join(', ');
+  pieEl.style.background = `conic-gradient(${stops})`;
+
+  legendEl.innerHTML = sorted.map(([cat, amt]) => {
+    const pct = Math.round((amt / monthlyTotal) * 100);
+    return `<div class="flex items-center justify-between text-xs py-1">
+      <span class="flex items-center gap-2" style="color:#D8D5F0;"><span class="breakdown-dot" style="background:${colorForCategory(cat)};"></span>${esc(cat)}</span>
+      <span style="color:#9B97C9;">RM ${fmtNum(amt)} <span style="opacity:.6;">(${pct}%)</span></span>
+    </div>`;
+  }).join('');
+}
+
+function renderMiniStats(){
+  const thisWeek = subs.filter(s => { const d = daysUntil(s.renewal); return d >= 0 && d <= 7; }).length;
+  document.getElementById('stat-this-week').textContent = thisWeek;
+
+  if(subs.length){
+    const mostExpensive = [...subs].sort((a,b)=>monthlyEquivalentMYR(b)-monthlyEquivalentMYR(a))[0];
+    document.getElementById('stat-most-expensive').textContent = mostExpensive.name;
+  } else {
+    document.getElementById('stat-most-expensive').textContent = '—';
+  }
+
+  if(subs.length){
+    const byCategory = {};
+    subs.forEach(s => byCategory[s.category] = (byCategory[s.category]||0) + monthlyEquivalentMYR(s));
+    const top = Object.entries(byCategory).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('stat-top-category').textContent = top[0];
+  } else {
+    document.getElementById('stat-top-category').textContent = '—';
+  }
+}
+
+function getFilteredSortedSubs(){
+  const catFilter = document.getElementById('filter-category').value;
+  const sortBy    = document.getElementById('sort-by').value;
+
+  let list = [...subs];
+  if(catFilter !== 'all') list = list.filter(s=>s.category===catFilter);
+
+  if(sortBy === 'renewal')     list.sort((a,b)=>daysUntil(a.renewal)-daysUntil(b.renewal));
+  else if(sortBy === 'price-desc') list.sort((a,b)=>monthlyEquivalentMYR(b)-monthlyEquivalentMYR(a));
+  else if(sortBy === 'price-asc')  list.sort((a,b)=>monthlyEquivalentMYR(a)-monthlyEquivalentMYR(b));
+  else if(sortBy === 'name')   list.sort((a,b)=>a.name.localeCompare(b.name));
+
+  return list;
+}
+
+let viewMode = 'cards';
+
+function setViewMode(mode){
+  viewMode = mode;
+  const cardsBtn = document.getElementById('view-cards-btn');
+  const tableBtn = document.getElementById('view-table-btn');
+  cardsBtn.style.background = mode==='cards' ? '#6C63FF' : 'transparent';
+  cardsBtn.style.color      = mode==='cards' ? '#fff' : '#9B97C9';
+  tableBtn.style.background = mode==='table' ? '#6C63FF' : 'transparent';
+  tableBtn.style.color      = mode==='table' ? '#fff' : '#9B97C9';
+  document.getElementById('sub-grid').classList.toggle('hidden', mode!=='cards');
+  document.getElementById('sub-table-wrap').classList.toggle('hidden', mode!=='table');
+  renderGrid();
+  renderTable();
+}
+
+function renderGrid(){
+  if(viewMode !== 'cards') return;
+  const grid  = document.getElementById('sub-grid');
+  const empty = document.getElementById('empty-state');
+  const list  = getFilteredSortedSubs();
+
+  if(!list.length){
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = list.map(sub=>{
+    const st = statusFor(sub);
+    const color = colorForCategory(sub.category);
+    const cycleLabels = { weekly:'/week', monthly:'/month', yearly:'/year', '2year':'/2 years', '3year':'/3 years', '4year':'/4 years', '5year':'/5 years' };
+    const cycleLabel = cycleLabels[sub.cycle] || '/month';
+    return `
+    <div class="sub-card ${st.borderClass}">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="badge-icon" style="background:${color};">${esc(initials(sub.name))}</div>
+          <div>
+            <div class="font-display font-semibold text-base leading-tight">${esc(sub.name)}</div>
+            <span class="cat-chip">${esc(sub.category)}</span>
+          </div>
+        </div>
+        <div class="flex gap-1">
+          <button onclick="openHistoryModal('${sub.id}')" title="Renewal history &amp; edit" style="background:none;border:none;cursor:pointer;color:#9B97C9;padding:4px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </button>
+          <button onclick="openConfirm('${sub.id}')" title="Remove" style="background:none;border:none;cursor:pointer;color:#9B97C9;padding:4px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="flex items-end justify-between">
+        <div>
+          <div class="font-display font-bold text-2xl">${esc(sub.currency)} ${fmtNum(sub.price)}</div>
+          <div class="text-xs" style="color:#8A8696;">${cycleLabel}</div>
+        </div>
+        <span class="pill ${st.pillClass}">${st.label}</span>
+      </div>
+      <div class="flex items-center gap-2 mt-3">
+        <button onclick="openRenewModal('${sub.id}')" class="flex-1" style="background:#3DDC97;color:#0A2E1E;font-weight:700;font-size:.78rem;border:none;border-radius:9px;padding:.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;" onmouseover="this.style.background='#34C589'" onmouseout="this.style.background='#3DDC97'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Renew
+        </button>
+        ${(sub.renewalHistory && sub.renewalHistory.length) ? `<button onclick="openHistoryModal('${sub.id}')" style="background:rgba(108,99,255,.12);color:#A8A4F5;font-weight:700;font-size:.72rem;border:none;border-radius:9px;padding:.5rem .65rem;cursor:pointer;white-space:nowrap;">
+          ${sub.renewalHistory.length}&times; history
+        </button>` : ''}
+      </div>
+      <div class="text-xs mt-2 pt-2" style="color:#8A8696;border-top:1px solid #E4E0D8;" title="Stored value: ${esc(sub.renewal)}">
+        Renews ${formatDateDisplay(sub.renewal)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function formatDateDisplay(d){
+  if(!d) return '—';
+  // Parse the YYYY-MM-DD string directly into components — avoids ANY
+  // possibility of timezone/locale drift from constructing a Date object.
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  if(!match) return d;
+  const [, y, m, day] = match;
+  const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthIdx = parseInt(m, 10) - 1;
+  return `${parseInt(day,10)} ${MONTHS_SHORT[monthIdx]} ${y}`;
+}
+
+function renderTable(){
+  if(viewMode !== 'table') return;
+  const tbody = document.getElementById('sub-table-body');
+  const empty = document.getElementById('empty-state');
+  const list  = getFilteredSortedSubs();
+
+  if(!list.length){
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  const cycleLabels = { weekly:'Weekly', monthly:'Monthly', yearly:'Yearly', '2year':'Every 2yr', '3year':'Every 3yr', '4year':'Every 4yr', '5year':'Every 5yr' };
+
+  tbody.innerHTML = list.map(sub=>{
+    const st = statusFor(sub);
+    const color = colorForCategory(sub.category);
+    const pillBgMap = { 'pill-ok':'#3DDC97', 'pill-soon':'#F5B341', 'pill-urgent':'#FF6B4A', 'pill-overdue':'#FF3B3B' };
+    const pillBg = pillBgMap[st.pillClass] || '#3DDC97';
+    return `
+    <tr>
+      <td class="py-3 px-4">
+        <div class="flex items-center gap-2.5">
+          <div class="badge-icon" style="width:32px;height:32px;font-size:.75rem;background:${color};">${esc(initials(sub.name))}</div>
+          <span class="font-display font-semibold" style="color:#EDEAFD;">${esc(sub.name)}</span>
+        </div>
+      </td>
+      <td class="py-3 px-4"><span class="cat-chip">${esc(sub.category)}</span></td>
+      <td class="py-3 px-4 text-right font-display font-semibold" style="color:#EDEAFD;">${esc(sub.currency)} ${fmtNum(sub.price)}</td>
+      <td class="py-3 px-4" style="color:#A39EE0;">${cycleLabels[sub.cycle] || sub.cycle}</td>
+      <td class="py-3 px-4" style="color:#A39EE0;">${formatDateDisplay(sub.renewal)}</td>
+      <td class="py-3 px-4"><span class="pill" style="background:${pillBg}1A;color:${pillBg};">${st.label}</span></td>
+      <td class="py-3 px-4 text-right">
+        <button class="table-icon-btn" onclick="openRenewModal('${sub.id}')" title="Renew" style="color:#3DDC97;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        </button>
+        <button class="table-icon-btn" onclick="openHistoryModal('${sub.id}')" title="Renewal history &amp; edit">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </button>
+        <button class="table-icon-btn" onclick="openCancelGuide('${sub.id}')" title="Cancel Info" style="color:#FF6B4A;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <button class="table-icon-btn" onclick="openConfirm('${sub.id}')" title="Remove">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AUTO-CALC RENEWAL DATE ──────────────────────────────────
+let renewalManuallyEdited = false;
+
+function onCycleOrStartChange(){
+  if(renewalManuallyEdited) return; // respect manual override
+  const start = document.getElementById('f-start').value;
+  const cycle = document.getElementById('f-cycle').value;
+  if(start){
+    document.getElementById('f-renewal').value = nextRenewalFromStart(start, cycle);
+    document.getElementById('renewal-auto-hint').textContent = 'Auto-calculated from start date';
+    document.getElementById('renewal-auto-hint').style.color = '#3DDC97';
+  }
+}
+
+function onRenewalManualChange(){
+  renewalManuallyEdited = true;
+  document.getElementById('renewal-auto-hint').textContent = 'Manually set';
+  document.getElementById('renewal-auto-hint').style.color = '#C23B14';
+}
+
+function resetRenewalAutoCalc(){
+  renewalManuallyEdited = false;
+  document.getElementById('renewal-auto-hint').textContent = 'Auto-calculated from start date';
+  document.getElementById('renewal-auto-hint').style.color = '#9B97C9';
+}
+
+// ── CURRENCY CONVERSION ──────────────────────────────────────
+const KNOWN_RATES = { USD: 4.70, SGD: 3.48, EUR: 5.05, GBP: 5.92 }; // rough defaults, user can override
+
+function onCurrencyChange(){
+  const cur = document.getElementById('f-currency').value;
+  const row = document.getElementById('exchange-rate-row');
+  if(cur === 'RM'){
+    row.classList.add('hidden');
+  } else {
+    row.classList.remove('hidden');
+    const rateInput = document.getElementById('f-exchange-rate');
+    if(!rateInput.value && KNOWN_RATES[cur]){
+      rateInput.value = KNOWN_RATES[cur];
+    }
+    updateExchangePreview();
+  }
+}
+
+function updateExchangePreview(){
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const rate  = parseFloat(document.getElementById('f-exchange-rate').value) || 0;
+  const preview = document.getElementById('exchange-preview');
+  if(price > 0 && rate > 0){
+    preview.textContent = `≈ RM ${fmtNum(price * rate)}`;
+    preview.style.color = '#3DDC97';
+  } else {
+    preview.textContent = 'Enter a rate to see the RM equivalent';
+    preview.style.color = '#9B97C9';
+  }
+}
+
+// ── TRIAL TOGGLE ──────────────────────────────────────────────
+function onTrialToggle(){
+  const checked = document.getElementById('f-is-trial').checked;
+  const row = document.getElementById('trial-end-row');
+  row.classList.toggle('hidden', !checked);
+  if(checked && !document.getElementById('f-trial-end').value){
+    document.getElementById('f-trial-end').value = document.getElementById('f-renewal').value || todayISO();
+  }
+}
+
+// ── MODAL: ADD / EDIT ──────────────────────────────────────
+function openAddModal(){
+  editingId = null;
+  resetRenewalAutoCalc();
+  document.getElementById('modal-title').textContent = 'Add Subscription';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-currency').value = 'RM';
+  document.getElementById('exchange-rate-row').classList.add('hidden');
+  document.getElementById('f-exchange-rate').value = '';
+  document.getElementById('f-cycle').value = 'monthly';
+  document.getElementById('f-category').value = 'Entertainment';
+  document.getElementById('f-start').value = todayISO();
+  document.getElementById('f-start').disabled = false;
+  document.getElementById('f-start').style.opacity = '1';
+  document.getElementById('f-start').style.cursor = '';
+  document.getElementById('original-start-hint').innerHTML = 'When you first signed up';
+  document.getElementById('f-renewal').value = nextRenewalFromStart(todayISO(), 'monthly');
+  document.getElementById('f-remind').value = '7';
+  document.getElementById('f-is-trial').checked = false;
+  document.getElementById('trial-end-row').classList.add('hidden');
+  document.getElementById('f-trial-end').value = '';
+  document.getElementById('f-cancel-by').value = '';
+  document.getElementById('f-cancel-url').value = '';
+  document.getElementById('f-cancel-notes').value = '';
+  document.getElementById('modal-overlay').classList.add('show');
+  bringModalToFront('modal-overlay');
+  setTimeout(()=>document.getElementById('f-name').focus(), 50);
+}
+
+function openEditModal(id){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub) return;
+  editingId = id;
+  // On open: show the saved renewal date as-is, don't auto-overwrite yet.
+  // But unlike "add" mode, we don't lock it permanently — if the user changes
+  // Start Date or Cycle, that's a clear signal to recalculate (handled below).
+  renewalManuallyEdited = false;
+  document.getElementById('renewal-auto-hint').textContent = 'Change Start Date or Cycle to recalculate';
+  document.getElementById('renewal-auto-hint').style.color = '#9B97C9';
+  document.getElementById('modal-title').textContent = 'Edit Subscription';
+  document.getElementById('f-name').value = sub.name;
+  document.getElementById('f-price').value = sub.price;
+  document.getElementById('f-currency').value = sub.currency;
+  if(sub.currency !== 'RM'){
+    document.getElementById('exchange-rate-row').classList.remove('hidden');
+    document.getElementById('f-exchange-rate').value = sub.exchangeRate || '';
+  } else {
+    document.getElementById('exchange-rate-row').classList.add('hidden');
+    document.getElementById('f-exchange-rate').value = '';
+  }
+  updateExchangePreview();
+  document.getElementById('f-cycle').value = sub.cycle;
+  document.getElementById('f-category').value = sub.category;
+  document.getElementById('f-start').value = sub.startDate || sub.renewal;
+  // Lock the original subscription date when editing — it's a historical fact
+  // and shouldn't drift just because someone is fixing the renewal date.
+  // Renewals (via the Renew button) are the correct way to move dates forward.
+  document.getElementById('f-start').disabled = true;
+  document.getElementById('f-start').style.opacity = '0.55';
+  document.getElementById('f-start').style.cursor = 'not-allowed';
+  document.getElementById('original-start-hint').innerHTML =
+    'Locked — this is historical. <a href="#" onclick="unlockOriginalStart(event)" style="color:#6C63FF;text-decoration:underline;">Unlock to correct a typo</a>';
+  document.getElementById('f-renewal').value = sub.renewal;
+  document.getElementById('f-remind').value = sub.remind || 7;
+  document.getElementById('f-is-trial').checked = !!sub.isTrial;
+  document.getElementById('trial-end-row').classList.toggle('hidden', !sub.isTrial);
+  document.getElementById('f-trial-end').value = sub.trialEnd || '';
+  document.getElementById('f-cancel-by').value = sub.cancelBy || '';
+  document.getElementById('f-cancel-url').value = sub.cancelUrl || '';
+  document.getElementById('f-cancel-notes').value = sub.cancelNotes || '';
+  document.getElementById('modal-overlay').classList.add('show');
+  bringModalToFront('modal-overlay');
+}
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function unlockOriginalStart(e){
+  if(e) e.preventDefault();
+  const field = document.getElementById('f-start');
+  field.disabled = false;
+  field.style.opacity = '1';
+  field.style.cursor = '';
+  document.getElementById('original-start-hint').innerHTML =
+    '<span style="color:#F5B341;">Unlocked — only change this to fix a mistake, not to log a renewal.</span>';
+}
+
+function saveSubscription(){
+  const name = document.getElementById('f-name').value.trim();
+  const price = parseFloat(document.getElementById('f-price').value);
+  const renewal = document.getElementById('f-renewal').value;
+  const startDate = document.getElementById('f-start').value;
+  const currency = document.getElementById('f-currency').value;
+  const isTrial = document.getElementById('f-is-trial').checked;
+
+  if(!name){ alert('Please enter a service name.'); return; }
+  if(isNaN(price) || price < 0){ alert('Please enter a valid price.'); return; }
+  if(!renewal){ alert('Please choose the next renewal date.'); return; }
+
+  const data = {
+    name,
+    price,
+    currency,
+    exchangeRate: currency !== 'RM' ? (parseFloat(document.getElementById('f-exchange-rate').value) || null) : null,
+    cycle:    document.getElementById('f-cycle').value,
+    category: document.getElementById('f-category').value,
+    startDate,
+    renewal,
+    remind:   parseInt(document.getElementById('f-remind').value),
+    isTrial,
+    trialEnd: isTrial ? document.getElementById('f-trial-end').value : null,
+    cancelBy: document.getElementById('f-cancel-by').value || null,
+    cancelUrl: document.getElementById('f-cancel-url').value.trim() || null,
+    cancelNotes: document.getElementById('f-cancel-notes').value.trim() || null,
+  };
+
+  if(editingId){
+    const idx = subs.findIndex(s=>s.id===editingId);
+    if(idx>=0){
+      const oldSub = subs[idx];
+      // If the renewal date was actually changed via Edit (not via the Renew
+      // button), log it as a manual correction so the history timeline has
+      // no silent gaps — clearly distinguished from a real renewal payment.
+      if(oldSub.renewal && oldSub.renewal !== renewal){
+        if(!Array.isArray(oldSub.renewalHistory)) oldSub.renewalHistory = [];
+        oldSub.renewalHistory.push({
+          date: todayISO(),
+          price: null,           // no payment associated — this is just a date correction
+          currency: oldSub.currency,
+          cycle: data.cycle,
+          note: 'Renewal date manually corrected from ' + formatDateDisplay(oldSub.renewal) + ' to ' + formatDateDisplay(renewal),
+          isManualEdit: true,
+        });
+        data.renewalHistory = oldSub.renewalHistory;
+      }
+      subs[idx] = { ...subs[idx], ...data };
+    }
+  } else {
+    data.id = 'sub_' + Date.now();
+    data.renewalHistory = []; // log of past renewals, populated via the Renew button
+    subs.push(data);
+  }
+
+  save();
+  closeModal();
+  render();
+}
+
+// ── DELETE CONFIRM ─────────────────────────────────────────
+function openConfirm(id){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub) return;
+  deletingId = id;
+  document.getElementById('confirm-text').textContent =
+    `"${sub.name}" (${sub.currency} ${fmtNum(sub.price)}${sub.cycle==='yearly'?'/yr':sub.cycle==='weekly'?'/wk':'/mo'}) will be removed.`;
+  document.getElementById('confirm-overlay').classList.add('show');
+  bringModalToFront('confirm-overlay');
+}
+function closeConfirm(){
+  document.getElementById('confirm-overlay').classList.remove('show');
+  deletingId = null;
+}
+function confirmDelete(){
+  if(!deletingId) return;
+  subs = subs.filter(s=>s.id!==deletingId);
+  save();
+  closeConfirm();
+  render();
+}
+
+// ── CANCEL GUIDE MODAL (read-only — shows saved cancel info, no editing here) ──
+function openCancelGuide(id){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub) return;
+  document.getElementById('cancel-guide-title').textContent = 'Cancel Info — ' + sub.name;
+
+  const notesBox = document.getElementById('cancel-guide-notes');
+  const hasAny = sub.cancelBy || sub.cancelNotes || sub.cancelUrl;
+
+  if(!hasAny){
+    notesBox.innerHTML = '<span style="color:#9B97C9;">No cancellation details saved for this subscription yet. Use the Edit (✎) button to add them.</span>';
+  } else {
+    let html = '';
+    if(sub.cancelBy){
+      html += `<div style="margin-bottom:.6rem;"><span style="font-weight:700;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;color:#7A7568;">Decide By</span><br/><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:#C23B14;">${formatDateDisplay(sub.cancelBy)}</span></div>`;
+    }
+    if(sub.cancelNotes){
+      html += `<div><span style="font-weight:700;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;color:#7A7568;">Steps / Support Contact</span><div style="margin-top:3px;">${esc(sub.cancelNotes)}</div></div>`;
+    }
+    notesBox.innerHTML = html;
+  }
+
+  const linkBtn = document.getElementById('cancel-guide-link');
+  if(sub.cancelUrl){
+    linkBtn.href = sub.cancelUrl;
+    linkBtn.style.display = 'inline-flex';
+  } else {
+    linkBtn.style.display = 'none';
+  }
+
+  document.getElementById('cancel-guide-overlay').classList.add('show');
+  bringModalToFront('cancel-guide-overlay');
+}
+function closeCancelGuide(){
+  document.getElementById('cancel-guide-overlay').classList.remove('show');
+}
+
+// ── RENEW MODAL ──────────────────────────────────────────────
+let renewingId = null;
+let editingHistoryIndex = null; // null = logging a new renewal; number = editing an existing history entry
+
+function openRenewModal(id){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub) return;
+  renewingId = id;
+  editingHistoryIndex = null;
+  document.getElementById('renew-title').textContent = 'Renew ' + sub.name;
+  document.getElementById('renew-confirm-btn').textContent = 'Confirm Renewal';
+  document.getElementById('renew-date').value  = todayISO();
+  document.getElementById('renew-price').value = sub.price;
+  document.getElementById('renew-cycle').value = sub.cycle;
+  document.getElementById('renew-note').value  = '';
+  document.getElementById('renew-preview-row').style.display = '';
+  document.getElementById('renew-overlay').classList.add('show');
+  bringModalToFront('renew-overlay');
+  updateRenewPreview();
+
+  // Live-update the "next renewal will be" preview as fields change
+  document.getElementById('renew-date').oninput  = updateRenewPreview;
+  document.getElementById('renew-cycle').onchange = updateRenewPreview;
+}
+
+// Edit a specific history entry in place (no new entry created, no duplicate detection)
+function openHistoryEntryEdit(id, historyIndex){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub || !Array.isArray(sub.renewalHistory)) return;
+  const entry = sub.renewalHistory[historyIndex];
+  if(!entry) return;
+
+  renewingId = id;
+  editingHistoryIndex = historyIndex;
+  document.getElementById('renew-title').textContent = 'Edit Entry — ' + sub.name;
+  document.getElementById('renew-confirm-btn').textContent = 'Save Changes';
+  document.getElementById('renew-date').value  = entry.date || todayISO();
+  document.getElementById('renew-price').value = (entry.price !== null && entry.price !== undefined) ? entry.price : sub.price;
+  document.getElementById('renew-cycle').value = entry.cycle || sub.cycle;
+  document.getElementById('renew-note').value  = entry.note || '';
+  // The "next renewal will be" preview doesn't apply when just correcting a past entry
+  document.getElementById('renew-preview-row').style.display = 'none';
+  document.getElementById('renew-overlay').classList.add('show');
+  bringModalToFront('renew-overlay');
+
+  document.getElementById('renew-date').oninput  = null;
+  document.getElementById('renew-cycle').onchange = null;
+}
+
+function updateRenewPreview(){
+  const date  = document.getElementById('renew-date').value;
+  const cycle = document.getElementById('renew-cycle').value;
+  if(!date){ document.getElementById('renew-next-preview').textContent = '—'; return; }
+  const next = addCycleToDate(date, cycle);
+  document.getElementById('renew-next-preview').textContent = formatDateDisplay(next);
+}
+
+function closeRenewModal(){
+  document.getElementById('renew-overlay').classList.remove('show');
+  renewingId = null;
+  editingHistoryIndex = null;
+}
+
+function confirmRenew(){
+  if(!renewingId) return;
+  const sub = subs.find(s=>s.id===renewingId);
+  if(!sub) return;
+
+  const renewDate = document.getElementById('renew-date').value;
+  const price      = parseFloat(document.getElementById('renew-price').value);
+  const cycle      = document.getElementById('renew-cycle').value;
+  const note       = document.getElementById('renew-note').value.trim();
+
+  if(!renewDate){ alert('Please choose the date.'); return; }
+  if(isNaN(price) || price < 0){ alert('Please enter a valid amount.'); return; }
+
+  // ── EDIT MODE: correcting an existing history entry in place ──
+  if(editingHistoryIndex !== null){
+    const entry = sub.renewalHistory[editingHistoryIndex];
+    if(!entry){ closeRenewModal(); return; }
+    entry.date  = renewDate;
+    entry.price = price;
+    entry.cycle = cycle;
+    entry.note  = note || null;
+
+    sub.renewalHistory.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+    // If this was the MOST RECENT entry, also refresh the subscription's
+    // live renewal date/price/cycle so the card reflects the correction.
+    const isLatest = sub.renewalHistory[sub.renewalHistory.length - 1] === entry;
+    if(isLatest){
+      sub.price = price;
+      sub.cycle = cycle;
+      sub.renewal = addCycleToDate(renewDate, cycle);
+    }
+
+    save();
+    closeRenewModal();
+    render();
+    if(document.getElementById('history-overlay').classList.contains('show')){
+      openHistoryModal(sub.id); // refresh the timeline in place — render() doesn't touch it
+    }
+    showToast('✅ Entry updated.');
+    return;
+  }
+
+  // ── NORMAL MODE: logging a brand new renewal ──
+  if(!Array.isArray(sub.renewalHistory)) sub.renewalHistory = [];
+  doConfirmRenew(sub, renewDate, price, cycle, note);
+}
+
+function doConfirmRenew(sub, renewDate, price, cycle, note){
+  // Log this renewal into history
+  sub.renewalHistory.push({
+    date: renewDate,
+    price: price,
+    currency: sub.currency,
+    cycle: cycle,
+    note: note || null,
+  });
+  // Keep history sorted oldest -> newest
+  sub.renewalHistory.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+  // Update the subscription's live state to reflect this renewal
+  sub.price  = price;
+  sub.cycle  = cycle;
+  sub.renewal = addCycleToDate(renewDate, cycle);
+  // startDate stays as the ORIGINAL subscription date — never overwritten by a renewal
+
+  // Renewing a trial means it has converted to a real paid subscription —
+  // clear the trial flag so it stops showing up in Needs Attention forever
+  // (otherwise daysUntil(trialEnd) stays negative permanently).
+  const wasTrial = !!sub.isTrial;
+  if(sub.isTrial){
+    sub.isTrial = false;
+    sub.trialEnd = null;
+  }
+
+  save();
+  closeRenewModal();
+  render();
+  showToast(wasTrial
+    ? '✅ Trial converted to paid — next renewal ' + formatDateDisplay(sub.renewal)
+    : '✅ Renewal logged — next renewal ' + formatDateDisplay(sub.renewal));
+}
+
+// Ensures the most-recently-opened modal is always visually on top, even when
+// one modal is opened from inside another (e.g. Edit Entry from within History).
+// Without this, modals stack purely by DOM source order, which is fragile.
+function bringModalToFront(id){
+  document.querySelectorAll('.modal-overlay').forEach(function(el){
+    el.classList.remove('modal-on-top');
+  });
+  const target = document.getElementById(id);
+  if(target) target.classList.add('modal-on-top');
+}
+
+function showToast(msg){
+  let t = document.getElementById('global-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'global-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#15172B;color:#EDEAFD;padding:11px 20px;border-radius:99px;font-size:.85rem;font-weight:600;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.style.opacity = '0'; }, 3200);
+}
+
+// ── HISTORY MODAL ────────────────────────────────────────────
+function openHistoryModal(id){
+  const sub = subs.find(s=>s.id===id);
+  if(!sub) return;
+  document.getElementById('history-title').textContent = sub.name + ' — History';
+
+  const cycleLabels = { weekly:'Weekly', monthly:'Monthly', yearly:'Yearly', '2year':'Every 2yr', '3year':'Every 3yr', '4year':'Every 4yr', '5year':'Every 5yr' };
+  const startLabel = sub.startDate ? formatDateDisplay(sub.startDate) : 'Unknown';
+  document.getElementById('history-subtitle').textContent = 'Subscribed since ' + startLabel;
+
+  const history = Array.isArray(sub.renewalHistory) ? sub.renewalHistory : [];
+  const timeline = document.getElementById('history-timeline');
+
+  // Build full timeline: original subscription first, then each renewal, oldest to newest
+  const entries = [];
+  entries.push({
+    isOriginal: true,
+    date: sub.startDate || sub.renewal,
+    price: history.length ? null : sub.price, // if no renewals yet, show current price as the original
+    currency: sub.currency,
+    cycle: sub.cycle,
+    note: null,
+  });
+  history.forEach(h => entries.push({ isOriginal:false, ...h }));
+
+  if(entries.length === 1 && !entries[0].date){
+    timeline.innerHTML = '<p class="text-sm" style="color:#9B97C9;">No history yet. Hit "Renew" when this subscription comes up for payment to start logging it.</p>';
+  } else {
+    timeline.innerHTML = entries.map((e, i) => {
+      const label = e.isOriginal ? 'Started' : (e.isManualEdit ? 'Date Corrected' : 'Renewed');
+      const priceText = (e.price !== null && e.price !== undefined) ? `${e.currency} ${fmtNum(e.price)}` : '';
+      const cycleText = (!e.isManualEdit && (cycleLabels[e.cycle] || e.cycle)) || '';
+      const dotClass = e.isOriginal ? 'is-original' : (e.isManualEdit ? 'is-edit' : '');
+      const dotSymbol = e.isOriginal ? '★' : (e.isManualEdit ? '✎' : '');
+      // historyIndex maps back to the position in sub.renewalHistory (entries[0] is the synthetic "Started" row, not real history)
+      const historyIndex = i - 1;
+
+      const editBtn = e.isOriginal
+        ? `<button onclick="openEditModal('${sub.id}')" title="Edit original subscription details" style="background:none;border:none;cursor:pointer;color:#9B97C9;padding:2px;flex-shrink:0;">
+             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+           </button>`
+        : `<button onclick="openHistoryEntryEdit('${sub.id}', ${historyIndex})" title="Edit this entry" style="background:none;border:none;cursor:pointer;color:#9B97C9;padding:2px;flex-shrink:0;">
+             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+           </button>`;
+      return `
+      <div class="timeline-item">
+        <div class="timeline-dot ${dotClass}">${dotSymbol}</div>
+        <div class="timeline-content" style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+          <div style="flex:1;min-width:0;">
+            <div class="timeline-date">${label} — ${formatDateDisplay(e.date)}</div>
+            ${(priceText || cycleText) ? `<div class="timeline-meta">${[priceText, cycleText].filter(Boolean).join(' · ')}</div>` : ''}
+            ${e.note ? `<div class="timeline-note">${esc(e.note)}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:2px;flex-shrink:0;">${editBtn}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('history-overlay').classList.add('show');
+  bringModalToFront('history-overlay');
+}
+function closeHistoryModal(){
+  document.getElementById('history-overlay').classList.remove('show');
+}
+
+// ── BOOT ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  load();
+  render();
+});
+</script>
+</body>
+</html>
